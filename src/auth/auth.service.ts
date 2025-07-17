@@ -1,11 +1,11 @@
 // src/auth/auth.service.ts
 import { Injectable } from '@nestjs/common';
-import { SignupDto } from './dto/register.dto';
+import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
-  async register(dto: SignupDto) {
+  async register(dto: RegisterDto) {
     return {
       message: 'Registered successfully',
       data: dto,
