@@ -2,7 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
+import { DoctorsModule } from './doctors/doctors.module'; // ✅ Add this line
 import { User } from './entities/User';
+import { Doctor } from './entities/Doctor'; // ✅ Add if not already
 
 @Module({
   imports: [
@@ -14,10 +16,11 @@ import { User } from './entities/User';
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [User],
-      synchronize: true, // temporarily true for development
+      entities: [User, Doctor], // ✅ Include Doctor entity
+      synchronize: true,
     }),
     AuthModule,
+    DoctorsModule, // ✅ Register here
   ],
 })
 export class AppModule {}
