@@ -1,6 +1,12 @@
 // src/entities/Doctor.ts
 
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { User } from './User';
 
 @Entity()
@@ -14,12 +20,11 @@ export class Doctor {
   @Column()
   experience: number;
 
-  // ✅ Add this field explicitly
-  @Column()
+  // ✅ Make the foreign key optional
+  @Column({ nullable: true })
   userid: number;
 
-  // ✅ Setup relation
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'userid' })
-  user: User;
+  user?: User;
 }

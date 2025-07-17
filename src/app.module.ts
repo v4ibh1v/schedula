@@ -1,10 +1,16 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+
+// Modules
 import { AuthModule } from './auth/auth.module';
-import { DoctorsModule } from './doctors/doctors.module'; // ✅ Add this line
+import { DoctorsModule } from './doctors/doctors.module';
+import { PatientModule } from './patient/patient.module'; // ✅ Make sure file exists
+
+// Entities
 import { User } from './entities/User';
-import { Doctor } from './entities/Doctor'; // ✅ Add if not already
+import { Doctor } from './entities/Doctor';
+import { Patient } from './entities/Patient'; // ✅ Ensure entity is exported
 
 @Module({
   imports: [
@@ -16,11 +22,13 @@ import { Doctor } from './entities/Doctor'; // ✅ Add if not already
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [User, Doctor], // ✅ Include Doctor entity
-      synchronize: true,
+      entities: [User, Doctor, Patient], // ✅ Register entities
+      synchronize: true, // ❗ Use only in dev
     }),
     AuthModule,
-    DoctorsModule, // ✅ Register here
+    DoctorsModule,
+    PatientModule, // ✅ Register module
   ],
 })
 export class AppModule {}
+
