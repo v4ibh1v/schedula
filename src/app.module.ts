@@ -5,12 +5,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 // Modules
 import { AuthModule } from './auth/auth.module';
 import { DoctorsModule } from './doctors/doctors.module';
-import { PatientModule } from './patient/patient.module'; // ✅ Make sure file exists
+import { PatientModule } from './patient/patient.module';
+import { AvailabilityModule } from './availability/availability.module'; // ✅ New
 
 // Entities
 import { User } from './entities/User';
 import { Doctor } from './entities/Doctor';
-import { Patient } from './entities/Patient'; // ✅ Ensure entity is exported
+import { Patient } from './entities/Patient';
+import { AvailabilitySlot } from './entities/AvailabilitySlot'; // ✅ New
 
 @Module({
   imports: [
@@ -22,13 +24,13 @@ import { Patient } from './entities/Patient'; // ✅ Ensure entity is exported
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [User, Doctor, Patient], // ✅ Register entities
-      synchronize: true, // ❗ Use only in dev
+      entities: [User, Doctor, Patient, AvailabilitySlot], // ✅ Add AvailabilitySlot
+      synchronize: true, // ❗ Dev only
     }),
     AuthModule,
     DoctorsModule,
-    PatientModule, // ✅ Register module
+    PatientModule,
+    AvailabilityModule, // ✅ Add AvailabilityModule
   ],
 })
 export class AppModule {}
-

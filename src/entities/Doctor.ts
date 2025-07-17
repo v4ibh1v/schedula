@@ -6,8 +6,10 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { User } from './User';
+import { AvailabilitySlot } from './AvailabilitySlot'; // ✅ Import this
 
 @Entity()
 export class Doctor {
@@ -20,11 +22,14 @@ export class Doctor {
   @Column()
   experience: number;
 
-  // ✅ Make the foreign key optional
   @Column({ nullable: true })
   userid: number;
 
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'userid' })
   user?: User;
+
+  // ✅ This is what was missing and causing the error
+  @OneToMany(() => AvailabilitySlot, (slot) => slot.doctor, { cascade: true })
+  availabilitySlots: AvailabilitySlot[];
 }
