@@ -1,10 +1,34 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  OneToOne,
+  JoinColumn,
+} from 'typeorm';
+import { Appointment } from './Appointment';
+import { User } from './User';
 
 @Entity()
 export class Patient {
-  @PrimaryGeneratedColumn('uuid') // ✅ Force UUID generation
-  id!: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column()
-  name!: string;
+  age: number;
+
+  @Column()
+  gender: string;
+
+  @Column()
+  address: string;
+
+  // ✅ Link to User entity (like name, email, etc.)
+  @OneToOne(() => User)
+  @JoinColumn()
+  user: User;
+
+  // ✅ Appointments relation
+  @OneToMany(() => Appointment, (appointment) => appointment.patient)
+  appointments: Appointment[];
 }

@@ -1,35 +1,39 @@
-// src/entities/Doctor.ts
-
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
-  JoinColumn,
   OneToMany,
+  OneToOne,
+  JoinColumn,
 } from 'typeorm';
+import { AvailabilitySlot } from './AvailabilitySlot';
+import { Appointment } from './Appointment';
 import { User } from './User';
-import { AvailabilitySlot } from './AvailabilitySlot'; // ✅ Import this
 
 @Entity()
 export class Doctor {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  userid: number;
+
+  @Column()
+  name: string;
 
   @Column()
   specialization: string;
 
-  @Column()
-  experience: number;
+  // ✅ Link to User entity
+  @OneToOne(() => User)
+  @JoinColumn()
+  user: User;
 
-  @Column({ nullable: true })
-  userid: number;
-
-  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'userid' })
-  user?: User;
-
-  // ✅ This is what was missing and causing the error
-  @OneToMany(() => AvailabilitySlot, (slot) => slot.doctor, { cascade: true })
+  // ✅ One-to-many relation to availability slots
+  @OneToMany(() => AvailabilitySlot, (slot) => slot.doctor)
   availabilitySlots: AvailabilitySlot[];
+
+  // ✅ One-to-many relation to appointments
+  @OneToMany(() => Appointment, (appointment) => appointment.doctor)
+  appointments: Appointment[];
 }

@@ -1,7 +1,12 @@
-// src/entities/AvailabilitySlot.ts
-
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 import { Doctor } from './Doctor';
+import { Appointment } from './Appointment';
 
 @Entity()
 export class AvailabilitySlot {
@@ -9,13 +14,13 @@ export class AvailabilitySlot {
   id: string;
 
   @Column()
-  date: string; // Format: YYYY-MM-DD
+  date: string;
 
   @Column()
-  startTime: string; // Format: HH:mm
+  startTime: string;
 
   @Column()
-  endTime: string; // Format: HH:mm
+  endTime: string;
 
   @Column()
   mode: 'stream' | 'wave';
@@ -23,8 +28,9 @@ export class AvailabilitySlot {
   @Column({ nullable: true })
   maxBookings: number;
 
-  @ManyToOne(() => Doctor, (doctor) => doctor.availabilitySlots, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(() => Doctor, doctor => doctor.availabilitySlots, { onDelete: 'CASCADE' })
   doctor: Doctor;
+
+  @OneToMany(() => Appointment, appointment => appointment.slot)
+appointments: Appointment[];
 }
