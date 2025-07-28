@@ -19,6 +19,15 @@ export class Appointment {
   @Column({ default: 'scheduled' })
   status: 'scheduled' | 'cancelled' | 'completed';
 
+  @Column()
+  date: Date;
+
+  @Column()
+  startTime: string;
+
+  @Column()
+  endTime: string;
+
   @ManyToOne(() => Doctor, doctor => doctor.appointments, { onDelete: 'CASCADE' })
   doctor: Doctor;
 
@@ -27,4 +36,6 @@ export class Appointment {
 
   @ManyToOne(() => AvailabilitySlot, slot => slot.appointments, { onDelete: 'CASCADE' })
   slot: AvailabilitySlot;
+
+  
 }

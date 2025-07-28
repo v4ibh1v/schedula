@@ -2,13 +2,13 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  OneToMany,
-  OneToOne,
+  ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
-import { AvailabilitySlot } from './AvailabilitySlot';
-import { Appointment } from './Appointment';
 import { User } from './User';
+import { AvailabilitySlot } from './AvailabilitySlot';
+import { Appointment } from './Appointment'; // ✅ Import added
 
 @Entity()
 export class Doctor {
@@ -16,24 +16,22 @@ export class Doctor {
   id: string;
 
   @Column()
-  userid: number;
-
-  @Column()
-  name: string;
-
-  @Column()
   specialization: string;
 
-  // ✅ Link to User entity
-  @OneToOne(() => User)
-  @JoinColumn()
-  user: User;
+  @Column()
+  experience: number;
 
-  // ✅ One-to-many relation to availability slots
-  @OneToMany(() => AvailabilitySlot, (slot) => slot.doctor)
+  @Column({ nullable: true })
+  userid: number;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'userid' })
+  user?: User;
+
+  @OneToMany(() => AvailabilitySlot, (slot) => slot.doctor, { cascade: true })
   availabilitySlots: AvailabilitySlot[];
 
-  // ✅ One-to-many relation to appointments
-  @OneToMany(() => Appointment, (appointment) => appointment.doctor)
+  // ✅ Add this to fix the error
+  @OneToMany(() => Appointment, (appointment) => appointment.doctor, { cascade: true })
   appointments: Appointment[];
 }

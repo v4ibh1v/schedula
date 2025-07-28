@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger } from '@nestjs/common';
 import { RoutesResolver } from '@nestjs/core/router/routes-resolver';
+import 'reflect-metadata';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

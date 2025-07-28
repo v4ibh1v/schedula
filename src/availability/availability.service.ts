@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+
 import { AvailabilitySlot } from '../entities/AvailabilitySlot';
-import { CreateSlotDto } from './dto/create-slot.dto';
 import { Doctor } from '../entities/Doctor';
+import { CreateAvailabilityDto } from './dto/create-availability.dto';
 
 @Injectable()
 export class AvailabilityService {
@@ -15,28 +16,41 @@ export class AvailabilityService {
     private readonly doctorRepo: Repository<Doctor>,
   ) {}
 
-  async getSlotsByDoctorId(doctorId: string) {
-    const doctor = await this.doctorRepo.findOne({ where: { id: doctorId } });
-    if (!doctor) throw new NotFoundException('Doctor not found');
-
-    return this.slotRepo.find({
-      where: { doctor: { id: doctorId } },
-      relations: ['doctor'],
+  async createAvailabilitySlot(dto: CreateAvailabilityDto): Promise<AvailabilitySlot[]> {
+    const doctor = await this.doctorRepo.findOne({
+      where: { id: dto.doctorId },
     });
+
+    if (!doctor) {
+      throw new NotFoundException('Doctor not found');
+    }
+
+    if (!dto.date && !dto.weekday) {
+      throw new Error('Either date or weekday must be provided');
+    }
+
+    // Create multiple slots from dto.sessions[]
+    const slots = dto.sessions.map((session) =>
+      this.slotRepo.create({
+        date: dto.date ?? null,
+        weekday: dto.weekday ?? null,
+        startTime: session.startTime,
+        endTime: session.endTime,
+        session: session.session,
+        mode: dto.mode,
+        maxBookings: session.maxBookings ?? null,
+        doctor: doctor,
+      }),
+    );
+
+    return await this.slotRepo.save(slots);
   }
 
-  async createSlot(doctorId: string, dto: CreateSlotDto) {
-    const doctor = await this.doctorRepo.findOne({ where: { id: doctorId } });
-    if (!doctor) throw new NotFoundException('Doctor not found');
-
-    const slot = this.slotRepo.create({ ...dto, doctor });
-    return this.slotRepo.save(slot);
-  }
-
-  async deleteSlot(slotId: string) {
-    const slot = await this.slotRepo.findOne({ where: { id: slotId } });
-    if (!slot) throw new NotFoundException('Slot not found');
-
-    return this.slotRepo.remove(slot);
+  async getDoctorSlots(doctorId: string): Promise<AvailabilitySlot[]> {
+    return this.slotRepo.find({
+      where: {
+        doctor: { id: doctorId },
+      },
+    });
   }
 }

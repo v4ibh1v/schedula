@@ -1,24 +1,23 @@
-import { Controller, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { AppointmentsService } from './appointments.service';
-import { CreateAppointmentDto } from './dto/create-appointment.dto';
-import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
+import { Controller, Patch, Body } from '@nestjs/common';
+import { AppointmentService } from './appointments.service';
 
 @Controller('appointments')
 export class AppointmentsController {
-  constructor(private readonly appointmentsService: AppointmentsService) {}
+  constructor(private readonly appointmentsService: AppointmentService) {}
 
-  @Post()
-  create(@Body() dto: CreateAppointmentDto) {
-    return this.appointmentsService.create(dto);
+  @Patch('reschedule-all')
+  rescheduleAll(@Body() body: { doctorId: string; shiftMinutes: number }) {
+    return this.appointmentsService.rescheduleAllFuture(body.doctorId, body.shiftMinutes);
   }
 
-  @Patch(':id/reschedule')
-  reschedule(@Param('id') id: string, @Body() dto: RescheduleAppointmentDto) {
-    return this.appointmentsService.reschedule(id, dto);
-  }
-
-  @Delete(':id')
-  cancel(@Param('id') id: string) {
-    return this.appointmentsService.cancel(id);
+  @Patch('reschedule-selected')
+  rescheduleSelected(
+    @Body() body: { doctorId: string; appointmentIds: number[]; shiftMinutes: number },
+  ) {
+    return this.appointmentsService.rescheduleSelected(
+      body.doctorId,
+      body.appointmentIds,
+      body.shiftMinutes,
+    );
   }
 }

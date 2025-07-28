@@ -1,104 +1,94 @@
 import {
   Injectable,
   NotFoundException,
-  ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThanOrEqual, In } from 'typeorm';
 import { Appointment } from '../entities/Appointment';
 import { Doctor } from '../entities/Doctor';
-import { Patient } from '../entities/Patient';
-import { AvailabilitySlot } from '../entities/AvailabilitySlot';
-import { CreateAppointmentDto } from './dto/create-appointment.dto';
-import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 
 @Injectable()
-export class AppointmentsService {
+export class AppointmentService {
   constructor(
     @InjectRepository(Appointment)
-    private appointmentRepo: Repository<Appointment>,
-
+    private readonly appointmentRepo: Repository<Appointment>,
     @InjectRepository(Doctor)
-    private doctorRepo: Repository<Doctor>,
-
-    @InjectRepository(Patient)
-    private patientRepo: Repository<Patient>,
-
-    @InjectRepository(AvailabilitySlot)
-    private slotRepo: Repository<AvailabilitySlot>,
+    private readonly doctorRepo: Repository<Doctor>,
   ) {}
 
-  async create(dto: CreateAppointmentDto) {
-    const doctor = await this.doctorRepo.findOne({ where: { id: dto.doctorId } });
-    const patient = await this.patientRepo.findOne({ where: { id: dto.patientId } });
-    const slot = await this.slotRepo.findOne({
-      where: { id: dto.slotId },
-      relations: ['doctor'],
+  async rescheduleAllFuture(doctorId: string, shiftMinutes: number) {
+    this.validateShiftAmount(shiftMinutes);
+    const now = new Date();
+
+    const appointments = await this.appointmentRepo.find({
+      where: {
+        doctor: { id: doctorId },
+        date: MoreThanOrEqual(now),
+      },
     });
 
-    if (!doctor || !patient || !slot) {
-      throw new NotFoundException('Doctor, Patient, or Slot not found');
+    if (appointments.length === 0) {
+      throw new NotFoundException('No future appointments found for this doctor.');
     }
 
-    if (slot.mode === 'stream') {
-      const existing = await this.appointmentRepo.findOne({ where: { slot } });
-      if (existing) throw new ConflictException('Slot already booked');
+    return this.updateAppointments(appointments, shiftMinutes);
+  }
+
+  async rescheduleSelected(
+    doctorId: string,
+    appointmentIds: number[],
+    shiftMinutes: number,
+  ) {
+    this.validateShiftAmount(shiftMinutes);
+
+    const appointments = await this.appointmentRepo.find({
+      where: {
+        id: In(appointmentIds),
+        doctor: { id: doctorId },
+      },
+    });
+
+    if (appointments.length !== appointmentIds.length) {
+      throw new NotFoundException(
+        'Some appointments were not found or do not belong to this doctor.',
+      );
     }
 
-    if (slot.mode === 'wave') {
-      const count = await this.appointmentRepo.count({ where: { slot } });
-      if (count >= slot.maxBookings)
-        throw new ConflictException('Slot is fully booked');
+    return this.updateAppointments(appointments, shiftMinutes);
+  }
+
+  private validateShiftAmount(shiftMinutes: number) {
+    if (shiftMinutes < 10 || shiftMinutes > 180) {
+      throw new BadRequestException(
+        'Shift must be between 10 minutes and 3 hours.',
+      );
     }
-
-    const appointment = this.appointmentRepo.create({
-      reason: dto.reason,
-      doctor,
-      patient,
-      slot,
-      status: 'scheduled',
-    });
-
-    return this.appointmentRepo.save(appointment);
   }
 
-  async reschedule(id: string, dto: RescheduleAppointmentDto) {
-    const appointment = await this.appointmentRepo.findOne({
-      where: { id },
-      relations: ['slot'],
-    });
+  private async updateAppointments(
+    appointments: Appointment[],
+    shiftMinutes: number,
+  ) {
+    const updated = appointments.map((app) => ({
+      ...app,
+      date: this.addMinutes(app.date, shiftMinutes),
+      startTime: this.addMinutesToTime(app.startTime, shiftMinutes),
+      endTime: this.addMinutesToTime(app.endTime, shiftMinutes),
+    }));
 
-    if (!appointment) throw new NotFoundException('Appointment not found');
-
-    const newSlot = await this.slotRepo.findOne({ where: { id: dto.newSlotId } });
-    if (!newSlot) throw new NotFoundException('New slot not found');
-
-    appointment.slot = newSlot;
-    appointment.status = 'scheduled';
-    return this.appointmentRepo.save(appointment);
+    return this.appointmentRepo.save(updated);
   }
 
-  async cancel(id: string) {
-    const appointment = await this.appointmentRepo.findOne({ where: { id } });
-    if (!appointment) throw new NotFoundException('Appointment not found');
-
-    appointment.status = 'cancelled';
-    return this.appointmentRepo.save(appointment);
+  private addMinutes(date: Date, minutes: number): Date {
+    return new Date(date.getTime() + minutes * 60000);
   }
 
-  // ✅ NEW: View appointments by patient
-  async getAppointmentsByPatient(patientId: string) {
-    return this.appointmentRepo.find({
-      where: { patient: { id: patientId } },
-      relations: ['doctor', 'slot'],
-    });
-  }
-
-  // ✅ NEW: View appointments by doctor
-  async getAppointmentsByDoctor(doctorId: string) {
-    return this.appointmentRepo.find({
-      where: { doctor: { id: doctorId } },
-      relations: ['patient', 'slot'],
-    });
+  private addMinutesToTime(timeString: string, minutes: number): string {
+    const [hours, mins] = timeString.split(':').map(Number);
+    const totalMinutes = hours * 60 + mins + minutes;
+    const newHours = Math.floor(totalMinutes / 60) % 24;
+    const newMins = totalMinutes % 60;
+    return `${String(newHours).padStart(2, '0')}:${String(newMins).padStart(2, '0')}`;
   }
 }
