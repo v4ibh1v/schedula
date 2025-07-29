@@ -4,6 +4,8 @@ import { DataSource } from 'typeorm';
 import { User } from './entities/User';
 import { Doctor } from './entities/Doctor';
 import { Patient } from './entities/Patient';
+import { AvailabilitySlot } from './entities/AvailabilitySlot'; 
+
 import * as dotenv from 'dotenv';
 
 dotenv.config();
